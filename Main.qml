@@ -16,8 +16,14 @@ ApplicationWindow {
         width: 1080
         height: 720
 
+        // Gonna render over everthing
         VulkanRenderItem {
             anchors.fill:parent
+        }
+        Rectangle {
+            width: 50
+            height: 50
+            color: "red"
         }
 
     }

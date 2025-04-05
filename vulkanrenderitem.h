@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QQuickItem>
-#include <QPointer>
-#include "renderer.h"  // Your "RendererCore" class header
+#include <QTimer>
+#include "renderer.h"  // Your RendererCore (Vulkan) header
 
 class QQuickWindow;
 
@@ -22,20 +22,28 @@ signals:
     void readyChanged();
 
 protected:
+    // Called when QML's scene graph is releasing resources (e.g., window closing)
     void releaseResources() override;
+
+    // Called each time the scene graph wants to update the item
     QSGNode* updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data) override;
 
+    // Called when certain item properties change (including being added/removed from a window)
+    void itemChange(ItemChange change, const ItemChangeData &value) override;
+
 private slots:
-    void handleWindowChanged(QQuickWindow *win);
-    void handleAfterRendering();
-    void cleanup();
+    void handleAfterRendering();  // Called after QML's scene graph
+    void cleanup();               // Destroys Vulkan resources
 
 private:
-    void* getNativeWindowHandle();
+    void initializeIfNeeded();
     void initializeExternalRenderer();
+    void* getNativeWindowHandle();
 
-    RendererCore m_renderer;
-    void* m_windowHandle = nullptr;
-    bool  m_windowHandleReady = false;
-    bool  m_rendererInitialized = false;
+    RendererCore m_renderer;  // Your Vulkan engine
+
+    QTimer  m_renderTimer;    // For continuous updates
+    void*   m_windowHandle = nullptr;
+    bool    m_windowHandleReady = false;
+    bool    m_rendererInitialized = false;
 };
