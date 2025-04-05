@@ -14,11 +14,24 @@ find_package(Qt6 REQUIRED COMPONENTS Quick)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
+
+
+
 qt_add_executable(appTestRenderer
     main.cpp
     vulkanrenderitem.h vulkanrenderitem.cpp
+    macmetalbridge.h macmetalbridge.mm
 )
 
+find_library(COCOA_LIBRARY Cocoa)
+find_library(QUARTZCORE_LIBRARY QuartzCore)
+
+
+target_link_libraries(appTestRenderer
+    PRIVATE
+    ${COCOA_LIBRARY}
+    ${QUARTZCORE_LIBRARY}
+)
 qt_add_qml_module(appTestRenderer
     URI TestRenderer
     VERSION 1.0

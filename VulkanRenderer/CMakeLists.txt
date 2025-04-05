@@ -31,6 +31,8 @@ add_library(VulkanRenderer SHARED
   texture.cpp
   TextureTiling.h
   TextureTiling.cpp
+  MetalSurfaceHelper.h
+  MetalSurfaceHelper.mm
 )
 
 target_link_libraries(VulkanRenderer PUBLIC
@@ -47,19 +49,27 @@ target_include_directories(VulkanRenderer PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}"
 )
+find_library(COCOA_LIBRARY Cocoa)
+find_library(QUARTZCORE_LIBRARY QuartzCore)
+
+target_link_libraries(VulkanRenderer
+    PRIVATE
+        ${COCOA_LIBRARY}
+        ${QUARTZCORE_LIBRARY}
+)
 
 target_compile_definitions(VulkanRenderer PRIVATE VULKANRENDERER_LIBRARY)
 target_compile_definitions(VulkanRenderer
     PRIVATE
         PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
 )
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
-    COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.vert -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv
-    COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.frag -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.vert ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.frag
-    COMMENT "Compiling shaders..."
-)
+#add_custom_command(
+#    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
+#    COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.vert -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv
+#    COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.frag -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
+#    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.vert ${CMAKE_CURRENT_SOURCE_DIR}/shaders/passthrough.frag
+#    COMMENT "Compiling shaders..."
+#)
 
 add_custom_target(Shaders ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv)
 add_dependencies(VulkanRenderer Shaders)

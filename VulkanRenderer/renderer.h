@@ -64,10 +64,9 @@
 #include <vulkan/vulkan_win32.h>
 #elif defined(__APPLE__)
 #define VK_USE_PLATFORM_METAL_EXT
-#include <Cocoa/Cocoa.h>
-#include <QuartzCore/CAMetalLayer.h>
 #include <vulkan/vulkan_metal.h>
 #include <vulkan/vulkan_macos.h>
+#include <MetalSurfaceHelper.h>
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
@@ -75,7 +74,6 @@
 
 #ifdef _WIN32
 #define PREFIX std::string("C:")
-#else
 #define PREFIX std::string("/mnt/c")
 #endif
 static std::vector<char> readFile(const std::string& filename) {
@@ -273,17 +271,8 @@ private:
 
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
-        // For macOS, we need to ensure we have a CAMetalLayer
-        NSView* nsView = (__bridge NSView*)rawHandle;
 
-        // Make sure the view is layer-backed
-        if (![nsView layer] || ![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
-            [nsView setWantsLayer:YES];
-            CAMetalLayer* metalLayer = [CAMetalLayer layer];
-            [nsView setLayer:metalLayer];
-        }
-
-        return (__bridge void*)nsView.layer;
+        return GetMetalLayerForNSView(rawHandle);
 #else
         // For Windows and other platforms, use the handle directly
         return rawHandle;
@@ -352,7 +341,7 @@ public:
         now = std::chrono::high_resolution_clock::now();
         //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        auto res = createTiledTexture("/Users/lukeroche/Downloads/Colonial.jpg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
         //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
@@ -1211,8 +1200,8 @@ private:
         //auto vertShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/vert.spv");
         //auto fragShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/frag.spv");
 
-        auto vertShaderCode = readFile("C:/Users/ljuek/Work_Code/TestRenderer/spirv/vert.spv");
-        auto fragShaderCode = readFile("C:/Users/ljuek/Work_Code/TestRenderer/spirv/frag.spv");
+        auto vertShaderCode = readFile("/Users/lukeroche/Code/VeloxrQt/VulkanRenderer/spirv/vert.spv");
+        auto fragShaderCode = readFile("/Users/lukeroche/Code/VeloxrQt/VulkanRenderer/spirv/frag.spv");
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 

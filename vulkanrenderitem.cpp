@@ -5,6 +5,9 @@
 #ifdef Q_OS_WIN
 #  include <windows.h>
 #endif
+#ifdef Q_OS_MACOS
+#  include "macmetalbridge.h"
+#endif
 
 VulkanRenderItem::VulkanRenderItem(QQuickItem *parent)
     : QQuickItem(parent)
@@ -119,17 +122,10 @@ void* VulkanRenderItem::getNativeWindowHandle()
     QWindow *w = window();
     if (!w) return nullptr;
 
-    NSView *nsView = (NSView*)w->winId();
-    if (!nsView) {
-        qWarning() << "[VulkanRenderItem] NSView is null!";
-        return nullptr;
-    }
-    [nsView setWantsLayer:YES];
-    if (![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
-        CAMetalLayer *metalLayer = [CAMetalLayer layer];
-        [nsView setLayer:metalLayer];
-    }
-    return (__bridge void*)nsView.layer;
+    WId wid = w->winId();
+
+    void *nsViewPtr = reinterpret_cast<void *>(wid);
+    return ForceMetalLayerForNSView(nsViewPtr);
 
 #else
     // On Linux, it depends on the backend (XCB vs Wayland).
