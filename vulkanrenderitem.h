@@ -1,23 +1,18 @@
 #pragma once
 
 #include <QQuickItem>
-#include <QTimer>
-#include "renderer.h" // Include your RendererCore class
+#include <QPointer>
+#include "renderer.h"  // Your "RendererCore" class header
 
-// Platform-specific includes
-#ifdef Q_OS_WIN
-#include <windows.h>
-#elif defined(Q_OS_MACOS)
-#include <Cocoa/Cocoa.h>
-#include <QuartzCore/CAMetalLayer.h>
-#endif
+class QQuickWindow;
 
-class VulkanRenderItem : public QQuickItem {
+class VulkanRenderItem : public QQuickItem
+{
     Q_OBJECT
     Q_PROPERTY(bool ready READ isReady NOTIFY readyChanged)
 
 public:
-    VulkanRenderItem(QQuickItem *parent = nullptr);
+    explicit VulkanRenderItem(QQuickItem *parent = nullptr);
     ~VulkanRenderItem();
 
     bool isReady() const { return m_windowHandleReady; }
@@ -26,19 +21,21 @@ public:
 signals:
     void readyChanged();
 
+protected:
+    void releaseResources() override;
+    QSGNode* updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data) override;
+
 private slots:
     void handleWindowChanged(QQuickWindow *win);
     void handleAfterRendering();
-    void render();
+    void cleanup();
 
 private:
-    void cleanup();
-    void releaseResources() override;
     void* getNativeWindowHandle();
     void initializeExternalRenderer();
 
+    RendererCore m_renderer;
     void* m_windowHandle = nullptr;
-    bool m_windowHandleReady = false;
-    bool m_rendererInitialized = false;
-    RendererCore core;
+    bool  m_windowHandleReady = false;
+    bool  m_rendererInitialized = false;
 };

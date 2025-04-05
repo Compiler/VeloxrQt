@@ -302,6 +302,7 @@ private:
         if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
+        std::cout << "Windows surface created!\n";
 #elif defined(__APPLE__)
         // macOS implementation using Metal
         VkMetalSurfaceCreateInfoEXT createInfo{};
@@ -1423,19 +1424,6 @@ private:
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
 
 
-
-    }
-
-    void createSurfaceFromHandle(void* windowHandle) {
-
-        VkWin32SurfaceCreateInfoKHR createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hwnd = static_cast<HWND>(windowHandle);
-        createInfo.hinstance = GetModuleHandle(nullptr);
-
-        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create window surface!");
-        }
 
     }
 
