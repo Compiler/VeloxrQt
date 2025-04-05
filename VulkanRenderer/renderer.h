@@ -172,6 +172,7 @@ public:
     void setWindowDimensions(int width, int height) {
         _windowWidth = width;
         _windowHeight = height;
+        frameBufferResized = true;
     }
     /*const*/Veloxr::OrthographicCamera& getCamera() {
         return _camera;
@@ -921,7 +922,7 @@ private:
          //   glfwGetFramebufferSize(window, &width, &height);
           //  glfwWaitEvents();
         //}
-        //vkDeviceWaitIdle(device);
+        vkDeviceWaitIdle(device);
 
         cleanupSwapChain();
 
@@ -975,14 +976,17 @@ private:
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
+public:
     void drawFrame() {
+        std::cout << "Drawing frame with extent: " << swapChainExtent.width << "x" << swapChainExtent.height << std::endl;
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
 
         VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || frameBufferResized) {
+            std::cout << "Resizing swapchain\n";
             frameBufferResized = false;
             recreateSwapChain();
             return;
@@ -1033,6 +1037,7 @@ private:
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     }
+private:
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 
@@ -1513,6 +1518,7 @@ private:
 
     }
 
+public:
     void destroy() {
 
         cleanupSwapChain();
@@ -1554,6 +1560,7 @@ private:
 
         glfwTerminate();
     }
+private:
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         createInfo = {};
@@ -1600,11 +1607,12 @@ private:
 
     }
 
-    // Won't need this in library. Pass in the vulkan instance.
-    void createVulkanInstance(){
+    // Won't need this in library. Pass in the vulkan instance. (Addendum) I am wrong.
+    void createVulkanInstance() {
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
+
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "ImageRenderer";
@@ -1617,36 +1625,26 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-        createInfo.enabledLayerCount = 0;
-
-        // ifdef macos / molten
         std::vector<const char*> requiredExtensions;
 
-        for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-            requiredExtensions.emplace_back(glfwExtensions[i]);
+        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);  // This is the critical addition!
+
+#ifdef __APPLE__
+        requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+#elif defined(_WIN32)
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
+
+        if (enableValidationLayers) {
+            requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        if(enableValidationLayers) requiredExtensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-        #ifdef _WIN32
-        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-        #elif defined(__APPLE__)
-        requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-        //#elif defined(__linux__)
-        //requiredExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        #endif
-
+#ifdef __APPLE__
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
-        createInfo.enabledExtensionCount = (uint32_t) requiredExtensions.size();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -1655,18 +1653,17 @@ private:
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
-
             createInfo.pNext = nullptr;
         }
 
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
-        std::cout << "Created a valid instance!\n";
 
+        std::cout << "Created a valid instance!\n";
     }
 };
 
