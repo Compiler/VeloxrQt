@@ -38,7 +38,7 @@ add_library(VulkanRenderer SHARED
 target_link_libraries(VulkanRenderer PUBLIC
     Qt${QT_VERSION_MAJOR}::Core
     Vulkan::Vulkan
-    glfw
+    glfw # dont need this
     OpenImageIO::OpenImageIO
     ${OpenCV_LIBS}
 )
